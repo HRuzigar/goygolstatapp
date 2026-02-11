@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import java.util.Locale
 
 // --- App Colors ---
 val ProfessionalBlue = Color(0xFF003366)
@@ -344,6 +345,7 @@ fun StatAzScreen() {
     val years = yearlyData.keys.sortedDescending()
     var selectedYear by remember { mutableStateOf(years.first()) }
     val currentData = yearlyData[selectedYear] ?: emptyMap()
+    val insights = remember(currentData) { calculateYearInsights(currentData) }
     val context = LocalContext.current
 
     Scaffold(
@@ -410,6 +412,7 @@ fun StatAzScreen() {
                 selectedYear = selectedYear,
                 onYearSelected = { selectedYear = it }
             )
+            SummaryInsightsCard(insights = insights)
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
@@ -423,6 +426,75 @@ fun StatAzScreen() {
                 item {
                     InfoCard()
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun SummaryInsightsCard(insights: YearInsights) {
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Statistik xülasə",
+                color = ProfessionalBlue,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Göstəricilərin sayı: ${insights.totalIndicators}",
+                color = Color.DarkGray,
+                fontSize = 14.sp
+            )
+            Text(
+                text = "Müsbət dinamika: ${insights.improvingCount}",
+                color = HighlightGreen,
+                fontSize = 14.sp
+            )
+            Text(
+                text = "Mənfi dinamika: ${insights.decliningCount}",
+                color = TrendRed,
+                fontSize = 14.sp
+            )
+            Text(
+                text = "Sabit/0.0% dinamika: ${insights.neutralCount}",
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
+            Text(
+                text = "Orta dəyişmə amplitudu: ${String.format(Locale.US, "%.1f", insights.averageAbsoluteChangePercent)}%",
+                color = ProfessionalBlue,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            insights.strongestIncrease?.let {
+                Text(
+                    text = "Ən güclü artım: ${it.label} (+${String.format(Locale.US, "%.1f", it.changePercent)}%)",
+                    color = HighlightGreen,
+                    fontSize = 14.sp
+                )
+            }
+            insights.strongestDecline?.let {
+                Text(
+                    text = "Ən güclü azalma: ${it.label} (${String.format(Locale.US, "%.1f", it.changePercent)}%)",
+                    color = TrendRed,
+                    fontSize = 14.sp
+                )
+            }
+            insights.mostVolatileCategory?.let {
+                Text(
+                    text = "Ən dəyişkən bölmə: $it",
+                    color = ProfessionalBlue,
+                    fontSize = 14.sp
+                )
             }
         }
     }
@@ -517,7 +589,7 @@ fun CategoryCard(categoryName: String, stats: List<StatItem>) {
         "MAKROİQTİSADİYYAT" -> Icons.AutoMirrored.Filled.TrendingUp
         "ƏMƏK BAZARI" -> Icons.Default.Work
         "SƏNAYE" -> Icons.Default.Factory
-        "KƏND TƏSƏRRÜFATİ" -> Icons.Default.Agriculture
+        "KƏND TƏSƏRRÜFATI" -> Icons.Default.Agriculture
         "HÜQUQİ VƏ FİZİKİ ŞƏXSLƏR" -> Icons.Default.PersonAddAlt1
         "ASAYİŞ" -> Icons.Default.Security
         else -> Icons.Default.Info
